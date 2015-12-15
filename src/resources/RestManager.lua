@@ -8,7 +8,8 @@ local RestManager = {}
     local Globals = require('src.resources.Globals')
 	
 	local settings = DBManager.getSettings()
-	
+	local site = settings.url
+
 	function urlencode(str)
           if (str) then
               str = string.gsub (str, "\n", "\r\n")
@@ -21,11 +22,8 @@ local RestManager = {}
 	
 	--obtiene la lista de los mensajes
 	RestManager.getListMessageChat = function()
-	
-        local settings = DBManager.getSettings()
-		
         -- Set url
-        local url = settings.url
+        local url = site
         url = url.."api/getListMessageChat/format/json"
         url = url.."/idApp/"..settings.idApp
 	
@@ -61,11 +59,8 @@ local RestManager = {}
 	
 	--obtiene los mensajes del chat seleccionado
 	RestManager.getChatMessages = function(channelId)
-	
-        local settings = DBManager.getSettings()
-		
         -- Set url
-        local url = settings.url
+        local url = site
         url = url.."api/getChatMessages/format/json"
         url = url.."/idApp/"..settings.idApp
 		url = url.."/channelId/".. channelId
@@ -103,11 +98,8 @@ local RestManager = {}
 	
 	--envia el chat
 	RestManager.sendChat = function(channelId, message, poscM, dateM)
-	
-        local settings = DBManager.getSettings()
-		
         -- Set url
-        local url = settings.url
+        local url = site
         url = url.."api/saveChat/format/json"
         url = url.."/idApp/" .. settings.idApp
 		url = url.."/channelId/" .. channelId
@@ -144,11 +136,8 @@ local RestManager = {}
     end
 	
 	RestManager.blokedChat = function(channelId,status)
-	
-        local settings = DBManager.getSettings()
-		
         -- Set url
-        local url = settings.url
+        local url = site
         url = url.."api/blokedChat/format/json"
         url = url.."/idApp/" .. settings.idApp
 		url = url.."/channelId/" .. channelId
@@ -178,7 +167,7 @@ local RestManager = {}
 			noConnectionMessage('No se detecto conexion a internet')
 		end
     end
-	
+
 	--obtiene la fecha actual
 	RestManager.getDate = function()
 		local date = os.date( "*t" )    -- Returns table of date & time values
@@ -203,8 +192,6 @@ local RestManager = {}
 		local months = {'Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'}
 		date2 = day .. " de " .. months[month2] .. " del " .. year
 		
-		
-		
 		return {date1,date2}
 	end
 	
@@ -217,5 +204,77 @@ local RestManager = {}
 		netConn:close()
 		return true
 	end
+
+
+
+
+    ---------------------------------- Pantalla HOME ----------------------------------
+    -------------------------------------
+    -- Obtiene los usuarios por ubicacion
+    -------------------------------------
+    RestManager.getUsersByCity = function()
+        local url = site.."api/getUsersByCity/format/json"
+	
+        local function callback(event)
+            if ( event.isError ) then
+            else
+                local data = json.decode(event.response)
+				loadImage({idx = 0, name = "HomeAvatars", path = "assets/img/avatar/", items = data.items})
+            end
+            return true
+        end
+        -- Do request
+		network.request( url, "GET", callback )
+    end
+
+
+    ---------------------------------- Metodos Comunes ----------------------------------
+    -------------------------------------
+    -- Redirije al metodo de la escena
+    -- @param obj registros de la consulta
+    -------------------------------------
+    function goToMethod(obj)
+        if obj.name == "HomeAvatars" then
+            getFirstCards(obj.items)
+        end
+    end 
+
+    -------------------------------------
+    -- Carga de la imagen del servidor o de TemporaryDirectory
+    -- @param obj registros de la consulta con la propiedad image
+    ------------------------------------- 
+    function loadImage(obj)
+        -- Next Image
+        if obj.idx < #obj.items then
+            -- actualizamos index
+            obj.idx = obj.idx + 1
+            -- Determinamos si la imagen existe
+            local img = obj.items[obj.idx].image
+            local path = system.pathForFile( img, system.TemporaryDirectory )
+            local fhd = io.open( path )
+            if fhd then
+                -- Existe la imagen
+                fhd:close()
+                loadImage(obj)
+            else
+                local function imageListener( event )
+                    if ( event.isError ) then
+                    else
+                        -- Eliminamos la imagen creada
+                        event.target:removeSelf()
+                        event.target = nil
+                        loadImage(obj)
+                    end
+                end
+                -- Descargamos de la nube
+                display.loadRemoteImage( site..obj.path..img,"GET", imageListener, img, system.TemporaryDirectory ) 
+            end
+        else
+            -- Dirigimos al metodo pertinente
+            goToMethod(obj)
+        end
+    end
+
+
 	
 return RestManager
