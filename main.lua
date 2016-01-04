@@ -13,25 +13,38 @@ display.setDefault( "textureWrapX", "repeat" )
 display.setDefault( "textureWrapY", "repeat" )
 
 local isUser = DBManager.setupSquema()
-composer.gotoScene("src.Login")
+composer.gotoScene("src.Home")
 
+---------------------Notificaciones---------------------------
+
+------------------------------------------------
+-- evento cuando se recibe y abre una notificacion
+-- @param message mensaje de la notificacion
+-- @param additionalData identificador y tipo de mensaje
+-- @param isActive indica si la app esta abierta
+------------------------------------------------
 function DidReceiveRemoteNotification(message, additionalData, isActive)
-	
+	--determina si la aplicacion esta activa
     if isActive then
-		
 		if (additionalData) then
+			--define el tipo de notificacion
 			if additionalData.type == "1" then
-				
+				local item = json.decode(additionalData.item)
 				local currScene = composer.getSceneName( "current" )
+				--si la scena actual es message pinta los nuevos mensajes 
 				if currScene == "src.Message" then
-					local item = json.decode(additionalData.item)
 					displaysInList(item[1], false )
+				else
+					system.vibrate()
 				end
-			else
-				system.vibrate()
+				--si la scena messages existe acomoda los chats
+				local titleScene = composer.getScene( "src.Messages" )
+				if titleScene then
+					movedChat(item[1], item[1].message, item[1].NoRead)
+				end
 			end
 		end
-		
+	--si no esta activa te manda al chat de la notificacion
 	else
 		if (additionalData) then
 			if additionalData.type == "1" then
@@ -46,14 +59,21 @@ function DidReceiveRemoteNotification(message, additionalData, isActive)
 	end
 end
 
+------------------------------------------------
+-- inicializa el plugin de notificaciones
+------------------------------------------------
 local OneSignal = require("plugin.OneSignal")
--- Uncomment SetLogLevel to debug issues.
--- OneSignal.SetLogLevel(4, 4)
 OneSignal.Init("b7f8ee34-cf02-4671-8826-75d45b3aaa07", "203224641778", DidReceiveRemoteNotification)
 
+------------------------------------------------
+-- obtiene el token por telefono
+------------------------------------------------
 function IdsAvailable(playerID, pushToken)
   --print("PLAYER_ID:" .. playerID)
 	--Globals.playerIdToken = playerID
 end
 
+------------------------------------------------
+-- llama a la funcion para obtener el token del telefono
+------------------------------------------------
 OneSignal.IdsAvailableCallback(IdsAvailable)

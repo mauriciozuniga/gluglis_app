@@ -11,25 +11,27 @@ local composer = require( "composer" )
 local Sprites = require('src.resources.Sprites')
 require('src.Menu')
 
+local scrMenu, bgShadow
 
 Tools = {}
 function Tools:new()
     -- Variables
     local self = display.newGroup()
-    local scrMenu, filtroGdacs, bgShadow, headLogo, bottomCheck, grpLoading, grpConnection, grpNoMessages
+    local filtroGdacs, headLogo, bottomCheck, grpLoading, grpConnection, grpNoMessages
     local h = display.topStatusBarContentHeight
     local fxTap = audio.loadSound( "fx/click.wav")
     self.y = h
     
     -- Creamos la el toolbar
     function self:buildHeader()
-        bgShadow = display.newRect( 0, 0, display.contentWidth, display.contentHeight )
-        bgShadow.alpha = 0
-        bgShadow.anchorX = 0
-        bgShadow.anchorY = 0
-        bgShadow:setFillColor( 0 )
-        self:insert(bgShadow)
-        
+		if not bgShadow then 
+			bgShadow = display.newRect( 0, 0, display.contentWidth, display.contentHeight )
+			bgShadow.alpha = 0
+			bgShadow.anchorX = 0
+			bgShadow.anchorY = 0
+			bgShadow:setFillColor( 0 )
+			self:insert(bgShadow)
+        end
         -- Icons
         local iconLogo = display.newImage("img/iconLogo.png")
         iconLogo:translate(display.contentWidth/2, 45)
@@ -47,12 +49,15 @@ function Tools:new()
             iconChat:addEventListener( 'tap', toScreen)
             self:insert( iconChat )
             -- Get Menu
-            scrMenu = Menu:new()
-            scrMenu:builScreen()
+			if not scrMenu then
+				scrMenu = Menu:new()
+				scrMenu:builScreen()
+			end
         else
             local icoBack = display.newImage("img/icoBack.png")
             icoBack:translate(45, 45)
             icoBack.screen = 'Home'
+			icoBack.isReturn = 1
             icoBack:addEventListener( 'tap', toScreen)
             self:insert( icoBack )
         end
@@ -153,6 +158,8 @@ function Tools:new()
                 grpNoMessages = nil
             end
         end
+		
+		return grpNoMessages
 	end
 	
     -- Cambia pantalla
@@ -171,7 +178,13 @@ function Tools:new()
             composer.gotoScene("src."..t.screen, { time = 400, effect = "fade" } )
         else
             composer.removeScene( "src."..t.screen )
-            composer.gotoScene("src."..t.screen, { time = 400, effect = "fade" } )
+			if t.screen == "Profile" then
+				local itemProfile = {id = 1, userName = "Ricardo Rodriguez", image = "1.png", edad = "24", genero = "Hombre", alojamiento = "Sí", residencia = "Cancun, Quintana Roo Mexico", isMe = true}
+				composer.gotoScene("src."..t.screen, { time = 400, effect = "fade", params = { item = itemProfile } } )
+			else
+				composer.gotoScene("src."..t.screen, { time = 400, effect = "fade" } )
+			end
+            
         end
         return true
     end

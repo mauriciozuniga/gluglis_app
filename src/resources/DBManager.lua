@@ -74,7 +74,7 @@ local dbManager = {}
 		end
 
 		query = "INSERT INTO config VALUES (1, 1, '', '', '', 'http://geekbucket.com.mx/gluglis/');"
-		--query = "INSERT INTO config VALUES (1, 0, '', '', '', 'http://localhost:8080/gluglis/');"
+		--query = "INSERT INTO config VALUES (1, 0, '', '', '', 'http://localhost:8080/gluglis_api/');"
 		db:exec( query )
     
 		closeConnection( )
